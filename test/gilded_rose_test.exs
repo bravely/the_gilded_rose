@@ -311,6 +311,32 @@ defmodule GildedRoseTest do
         quality: 0
       })
     end
+
+    test "Conjured items degrade in quality twice as fast, but otherwise match standard item behavior" do
+      gilded_rose = GildedRose.new()
+
+      gilded_rose
+      |> GildedRose.items()
+      # Baseline!
+      |> assert_item_matches(%Item{
+        name: "Conjured Mana Cake",
+        sell_in: 3,
+        quality: 6
+      })
+
+      # Quality degrades by two before the sell_in date.
+      for _ <- 1..3 do
+        assert :ok == GildedRose.update_quality(gilded_rose)
+      end
+
+      gilded_rose
+      |> GildedRose.items()
+      |> assert_item_matches(%Item{
+        name: "Conjured Mana Cake",
+        sell_in: 0,
+        quality: 0
+      })
+    end
   end
 
   defp assert_item_matches(item_list, %Item{

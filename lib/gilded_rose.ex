@@ -44,6 +44,16 @@ defmodule GildedRose do
     end
   end
 
+  def update_item(%Item{name: "Conjured " <> _item_name} = item) do
+    case item do
+      %{sell_in: sell_in, quality: quality} when sell_in >= 0 ->
+        %{item | sell_in: sell_in - 1, quality: max(quality - 2, 0)}
+
+      %{sell_in: sell_in, quality: quality} when sell_in < 0 ->
+        %{item | sell_in: sell_in - 1, quality: max(quality - 4, 0)}
+    end
+  end
+
   def update_item(%Item{name: "Aged Brie"} = item) do
     case item do
       %{sell_in: sell_in, quality: quality} when sell_in > 0 ->
