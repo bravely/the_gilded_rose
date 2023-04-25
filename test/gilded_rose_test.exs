@@ -336,6 +336,9 @@ defmodule GildedRoseTest do
         sell_in: 0,
         quality: 0
       })
+
+      # Currently there's no Conjured items whose sell_in affects quality, but
+      # if any are added, add them here!
     end
   end
 
