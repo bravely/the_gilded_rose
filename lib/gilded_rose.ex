@@ -55,23 +55,10 @@ defmodule GildedRose do
   end
 
   def update_item(item) do
-    item =
-      if item.quality > 0 do
-        %{item | quality: item.quality - 1}
-      else
-        item
-      end
+    sell_in = item.sell_in - 1
+    quality = if sell_in >= 0, do: item.quality - 1, else: item.quality - 2
 
-    item = %{item | sell_in: item.sell_in - 1}
-
-    item =
-      if item.sell_in < 0 && item.quality > 0 do
-        %{item | quality: item.quality - 1}
-      else
-        item
-      end
-
-    item
+    %{item | sell_in: sell_in, quality: max(quality, 0)}
   end
 
   def update_quality(agent) do
