@@ -92,5 +92,65 @@ defmodule GildedRoseTest do
       assert %Item{name: "Elixir of the Mongoose", sell_in: -6, quality: 0} =
                Enum.find(items, &(&1.name == "Elixir of the Mongoose"))
     end
+
+    test "Aged Brie increases in quality as its sell_in decreases, but never exceeds maximum" do
+      gilded_rose = GildedRose.new()
+
+      # Baseline Aged Brie sell_in and quality.
+      items = GildedRose.items(gilded_rose)
+
+      assert %Item{name: "Aged Brie", sell_in: 2, quality: 0} =
+               Enum.find(items, &(&1.name == "Aged Brie"))
+
+      # Work up to the sell_in date for the Aged Brie. Quality should increase by 1 each time.
+      for _ <- 1..2 do
+        assert :ok == GildedRose.update_quality(gilded_rose)
+      end
+
+      items = GildedRose.items(gilded_rose)
+
+      assert %Item{name: "Aged Brie", sell_in: 0, quality: 2} =
+               Enum.find(items, &(&1.name == "Aged Brie"))
+
+      # Past sell_in, quality should increase by 2 each time...
+      for _ <- 1..24 do
+        assert :ok == GildedRose.update_quality(gilded_rose)
+      end
+
+      items = GildedRose.items(gilded_rose)
+
+      assert %Item{name: "Aged Brie", sell_in: -24, quality: 50} =
+               Enum.find(items, &(&1.name == "Aged Brie"))
+
+      # ...but can't exceed 50.
+      for _ <- 1..2 do
+        assert :ok == GildedRose.update_quality(gilded_rose)
+      end
+
+      items = GildedRose.items(gilded_rose)
+
+      assert %Item{name: "Aged Brie", sell_in: -26, quality: 50} =
+               Enum.find(items, &(&1.name == "Aged Brie"))
+    end
+
+    test "Sulfuras never decreases in quality as its sell_in increases" do
+      gilded_rose = GildedRose.new()
+
+      # Baseline for Sulfuras.
+      items = GildedRose.items(gilded_rose)
+
+      assert %Item{name: "Sulfuras, Hand of Ragnaros", sell_in: 0, quality: 80} =
+               Enum.find(items, &(&1.name == "Sulfuras, Hand of Ragnaros"))
+
+      # Work up to the sell_in date for the Sulfuras. Quality should never change.
+      for _ <- 1..10 do
+        assert :ok == GildedRose.update_quality(gilded_rose)
+      end
+
+      items = GildedRose.items(gilded_rose)
+
+      assert %Item{name: "Sulfuras, Hand of Ragnaros", sell_in: 0, quality: 80} =
+               Enum.find(items, &(&1.name == "Sulfuras, Hand of Ragnaros"))
+    end
   end
 end
