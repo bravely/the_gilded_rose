@@ -136,9 +136,9 @@ defmodule GildedRoseTest do
     test "Sulfuras never decreases in quality as its sell_in increases" do
       gilded_rose = GildedRose.new()
 
-      # Baseline for Sulfuras.
       items = GildedRose.items(gilded_rose)
 
+      # Baseline for Sulfuras.
       assert %Item{name: "Sulfuras, Hand of Ragnaros", sell_in: 0, quality: 80} =
                Enum.find(items, &(&1.name == "Sulfuras, Hand of Ragnaros"))
 
@@ -151,6 +151,74 @@ defmodule GildedRoseTest do
 
       assert %Item{name: "Sulfuras, Hand of Ragnaros", sell_in: 0, quality: 80} =
                Enum.find(items, &(&1.name == "Sulfuras, Hand of Ragnaros"))
+    end
+
+    test "Backstage passes increases in quality according to its own rules" do
+      gilded_rose = GildedRose.new()
+
+      items = GildedRose.items(gilded_rose)
+
+      # Baseline for Backstage passes.
+      assert %Item{name: "Backstage passes to a TAFKAL80ETC concert", sell_in: 15, quality: 20} =
+               Enum.find(items, &(&1.name == "Backstage passes to a TAFKAL80ETC concert"))
+
+      # Work up to 10 days before, when quality increases by 1 each time.
+      for _ <- 1..5 do
+        assert :ok == GildedRose.update_quality(gilded_rose)
+      end
+
+      items = GildedRose.items(gilded_rose)
+
+      assert %Item{name: "Backstage passes to a TAFKAL80ETC concert", sell_in: 10, quality: 25} =
+               Enum.find(items, &(&1.name == "Backstage passes to a TAFKAL80ETC concert"))
+
+      # Under 10 days, but more than 5, quality increases by 2 each time.
+      assert :ok == GildedRose.update_quality(gilded_rose)
+      items = GildedRose.items(gilded_rose)
+
+      assert %Item{name: "Backstage passes to a TAFKAL80ETC concert", sell_in: 9, quality: 27} =
+               Enum.find(items, &(&1.name == "Backstage passes to a TAFKAL80ETC concert"))
+
+      for _ <- 1..4 do
+        assert :ok == GildedRose.update_quality(gilded_rose)
+      end
+
+      items = GildedRose.items(gilded_rose)
+
+      assert %Item{name: "Backstage passes to a TAFKAL80ETC concert", sell_in: 5, quality: 35} =
+               Enum.find(items, &(&1.name == "Backstage passes to a TAFKAL80ETC concert"))
+
+      # Now, under 5 days, quality increases by 3 each time.
+      assert :ok == GildedRose.update_quality(gilded_rose)
+      items = GildedRose.items(gilded_rose)
+
+      assert %Item{name: "Backstage passes to a TAFKAL80ETC concert", sell_in: 4, quality: 38} =
+               Enum.find(items, &(&1.name == "Backstage passes to a TAFKAL80ETC concert"))
+
+      for _ <- 1..4 do
+        assert :ok == GildedRose.update_quality(gilded_rose)
+      end
+
+      items = GildedRose.items(gilded_rose)
+
+      assert %Item{name: "Backstage passes to a TAFKAL80ETC concert", sell_in: 0, quality: 50} =
+               Enum.find(items, &(&1.name == "Backstage passes to a TAFKAL80ETC concert"))
+
+      # And after the concert, quality drops to 0, and stays there.
+      assert :ok == GildedRose.update_quality(gilded_rose)
+      items = GildedRose.items(gilded_rose)
+
+      assert %Item{name: "Backstage passes to a TAFKAL80ETC concert", sell_in: -1, quality: 0} =
+               Enum.find(items, &(&1.name == "Backstage passes to a TAFKAL80ETC concert"))
+
+      for _ <- 1..10 do
+        assert :ok == GildedRose.update_quality(gilded_rose)
+      end
+
+      items = GildedRose.items(gilded_rose)
+
+      assert %Item{name: "Backstage passes to a TAFKAL80ETC concert", sell_in: -11, quality: 0} =
+               Enum.find(items, &(&1.name == "Backstage passes to a TAFKAL80ETC concert"))
     end
   end
 end
