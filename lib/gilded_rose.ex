@@ -20,47 +20,34 @@ defmodule GildedRose do
 
   def items(agent), do: Agent.get(agent, & &1)
 
-  def update_quality(agent) do
-    for i <- 0..(Agent.get(agent, &length/1) - 1) do
-      item = Agent.get(agent, &Enum.at(&1, i))
+  @legendary_items [
+    "Sulfuras, Hand of Ragnaros"
+  ]
 
-      item =
-        cond do
-          item.name != "Aged Brie" && item.name != "Backstage passes to a TAFKAL80ETC concert" ->
-            if item.quality > 0 do
-              if item.name != "Sulfuras, Hand of Ragnaros" do
-                %{item | quality: item.quality - 1}
-              else
-                item
-              end
-            else
-              item
-            end
+  def update_item(%Item{name: name} = item) when name in @legendary_items do
+    item
+  end
 
-          true ->
-            cond do
-              item.quality < 50 ->
-                item = %{item | quality: item.quality + 1}
+  def update_item(item) do
+    item =
+      cond do
+        item.name != "Aged Brie" && item.name != "Backstage passes to a TAFKAL80ETC concert" ->
+          if item.quality > 0 do
+            %{item | quality: item.quality - 1}
+          else
+            item
+          end
 
-                cond do
-                  item.name == "Backstage passes to a TAFKAL80ETC concert" ->
-                    item =
-                      cond do
-                        item.sell_in < 11 ->
-                          cond do
-                            item.quality < 50 ->
-                              %{item | quality: item.quality + 1}
+        true ->
+          cond do
+            item.quality < 50 ->
+              item = %{item | quality: item.quality + 1}
 
-                            true ->
-                              item
-                          end
-
-                        true ->
-                          item
-                      end
-
+              cond do
+                item.name == "Backstage passes to a TAFKAL80ETC concert" ->
+                  item =
                     cond do
-                      item.sell_in < 6 ->
+                      item.sell_in < 11 ->
                         cond do
                           item.quality < 50 ->
                             %{item | quality: item.quality + 1}
@@ -73,66 +60,73 @@ defmodule GildedRose do
                         item
                     end
 
-                  true ->
-                    item
-                end
+                  cond do
+                    item.sell_in < 6 ->
+                      cond do
+                        item.quality < 50 ->
+                          %{item | quality: item.quality + 1}
 
-              true ->
-                item
-            end
-        end
+                        true ->
+                          item
+                      end
 
-      item =
-        cond do
-          item.name != "Sulfuras, Hand of Ragnaros" ->
-            %{item | sell_in: item.sell_in - 1}
+                    true ->
+                      item
+                  end
 
-          true ->
-            item
-        end
+                true ->
+                  item
+              end
 
-      item =
-        cond do
-          item.sell_in < 0 ->
-            cond do
-              item.name != "Aged Brie" ->
-                cond do
-                  item.name != "Backstage passes to a TAFKAL80ETC concert" ->
-                    cond do
-                      item.quality > 0 ->
-                        cond do
-                          item.name != "Sulfuras, Hand of Ragnaros" ->
-                            %{item | quality: item.quality - 1}
+            true ->
+              item
+          end
+      end
 
-                          true ->
-                            item
-                        end
+    item = %{item | sell_in: item.sell_in - 1}
 
-                      true ->
-                        item
-                    end
+    item =
+      cond do
+        item.sell_in < 0 ->
+          cond do
+            item.name != "Aged Brie" ->
+              cond do
+                item.name != "Backstage passes to a TAFKAL80ETC concert" ->
+                  cond do
+                    item.quality > 0 ->
+                      %{item | quality: item.quality - 1}
 
-                  true ->
-                    %{item | quality: item.quality - item.quality}
-                end
+                    true ->
+                      item
+                  end
 
-              true ->
-                cond do
-                  item.quality < 50 ->
-                    %{item | quality: item.quality + 1}
+                true ->
+                  %{item | quality: item.quality - item.quality}
+              end
 
-                  true ->
-                    item
-                end
-            end
+            true ->
+              cond do
+                item.quality < 50 ->
+                  %{item | quality: item.quality + 1}
 
-          true ->
-            item
-        end
+                true ->
+                  item
+              end
+          end
 
-      Agent.update(agent, &List.replace_at(&1, i, item))
-    end
+        true ->
+          item
+      end
 
-    :ok
+    item
+  end
+
+  def update_quality(agent) do
+    updated_items =
+      agent
+      |> items()
+      |> Enum.map(&update_item/1)
+
+    Agent.update(agent, fn _ -> updated_items end)
   end
 end
